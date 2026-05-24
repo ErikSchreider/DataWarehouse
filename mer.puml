@@ -1,0 +1,55 @@
+@startuml
+title ME/R Model - Space Traffic Analysis
+
+entity "Space Object" as SpaceObject {
+  * object_id
+  --
+  norad_id
+  object_name
+  object_type
+  operational_status
+  launch_date
+}
+
+entity "Operator" as Operator {
+  * operator_id
+  --
+  operator_name
+  operator_type
+  country
+}
+
+entity "Orbit Band" as OrbitBand {
+  * orbit_band_id
+  --
+  orbit_class
+  altitude_min_km
+  altitude_max_km
+}
+
+entity "Source" as Source {
+  * source_id
+  --
+  source_name
+  source_type
+}
+
+entity "Object Position Observation" as Fact {
+  * observation_id
+  --
+  observation_timestamp
+  altitude_km
+  latitude
+  longitude
+  velocity_km_s
+  inclination_deg
+  object_count
+  debris_risk_score
+}
+
+Operator ||--o{ SpaceObject : operates
+SpaceObject ||--o{ Fact : observed
+OrbitBand ||--o{ Fact : classified_in
+Source ||--o{ Fact : loaded_from
+
+@enduml
