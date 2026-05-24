@@ -1,0 +1,63 @@
+@page "/sources"
+@inject IDashboardService DashboardService
+
+<PageTitle>Sources</PageTitle>
+
+<h1 class="h3 mb-4">Sources</h1>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (sources is null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table table-sm table-striped align-middle">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Source</th>
+                <th>Type</th>
+                <th>URL</th>
+                <th>Last import</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var source in sources)
+            {
+                <tr>
+                    <td>@source.SourceId</td>
+                    <td>@source.SourceName</td>
+                    <td>@source.SourceType</td>
+                    <td class="text-break">@source.SourceUrl</td>
+                    <td>@FormatDate(source.LastImportTimestamp)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IReadOnlyList<SourceSummary>? sources;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            sources = await DashboardService.GetSourcesAsync(CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            errorMessage = exception.Message;
+        }
+    }
+
+    private static string FormatDate(DateTime? value)
+    {
+        return value?.ToString("yyyy-MM-dd HH:mm:ss") ?? "n/a";
+    }
+}

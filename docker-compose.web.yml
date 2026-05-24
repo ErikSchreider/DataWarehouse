@@ -1,0 +1,17 @@
+services:
+  space-traffic-web:
+    container_name: space-traffic-web
+    build:
+      context: ./src/SpaceTrafficWeb
+      dockerfile: Dockerfile
+    image: space-traffic-web:latest
+    restart: unless-stopped
+    ports:
+      - "8085:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      EXASOL_HOST: 192.168.178.155
+      EXASOL_PORT: 8563
+      EXASOL_SCHEMA: SPACE_TRAFFIC
+      EXASOL_USER: sys
+      EXASOL_PASSWORD: exasol

@@ -1,0 +1,83 @@
+@page "/orbit-analysis"
+@inject IDashboardService DashboardService
+
+<PageTitle>Orbit Analysis</PageTitle>
+
+<h1 class="h3 mb-4">Orbit Analysis</h1>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (orbitCounts is null || altitudeRows is null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <section class="mb-5">
+        <h2 class="h5">Objects per orbit class</h2>
+        <table class="table table-sm table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Orbit class</th>
+                    <th class="text-end">Objects</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in orbitCounts)
+                {
+                    <tr>
+                        <td>@row.OrbitClass</td>
+                        <td class="text-end">@row.ObjectCount</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2 class="h5">Average altitude by object type</h2>
+        <table class="table table-sm table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Object type</th>
+                    <th class="text-end">Average altitude km</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in altitudeRows)
+                {
+                    <tr>
+                        <td>@row.ObjectType</td>
+                        <td class="text-end">@FormatNumber(row.AverageAltitudeKm)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </section>
+}
+
+@code {
+    private IReadOnlyList<OrbitClassCount>? orbitCounts;
+    private IReadOnlyList<ObjectTypeAltitude>? altitudeRows;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            orbitCounts = await DashboardService.GetObjectsByOrbitClassAsync(CancellationToken.None);
+            altitudeRows = await DashboardService.GetAverageAltitudeByObjectTypeAsync(CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            errorMessage = exception.Message;
+        }
+    }
+
+    private static string FormatNumber(double? value)
+    {
+        return value?.ToString("N2") ?? "n/a";
+    }
+}
