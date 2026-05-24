@@ -1,0 +1,24 @@
+services:
+  space-traffic-etl:
+    container_name: space-traffic-etl
+    build:
+      context: ./SpaceTrafficETL
+      dockerfile: Dockerfile
+    image: space-traffic-etl:latest
+    restart: unless-stopped
+    environment:
+      DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT:-Production}
+      EXASOL_HOST: ${EXASOL_HOST}
+      EXASOL_PORT: ${EXASOL_PORT:-8563}
+      EXASOL_SCHEMA: ${EXASOL_SCHEMA:-STAGING}
+      EXASOL_USER: ${EXASOL_USER}
+      EXASOL_PASSWORD: ${EXASOL_PASSWORD}
+      SpaceTraffic__DataDirectories__StorageRoot: /data
+      SpaceTraffic__Exasol__Host: ${EXASOL_HOST}
+      SpaceTraffic__Exasol__Port: ${EXASOL_PORT:-8563}
+      SpaceTraffic__Exasol__Schema: ${EXASOL_SCHEMA:-STAGING}
+      SpaceTraffic__Exasol__Username: ${EXASOL_USER}
+      SpaceTraffic__Exasol__Password: ${EXASOL_PASSWORD}
+      SpaceTraffic__Etl__Interval: ${ETL_INTERVAL:-24:00:00}
+    volumes:
+      - /opt/space-traffic-etl/data:/data
