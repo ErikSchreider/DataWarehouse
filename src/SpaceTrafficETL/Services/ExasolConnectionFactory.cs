@@ -49,8 +49,7 @@ public sealed class ExasolConnectionFactory(IOptions<SpaceTrafficOptions> option
             $"Driver={{{EscapeDriverName(exasol.OdbcDriver)}}}",
             $"EXAHOST={exasol.Host}:{exasol.Port}",
             $"UID={exasol.Username}",
-            $"PWD={exasol.Password}",
-            $"CONNECTIONTIMEOUT={(int)exasol.ConnectionTimeout.TotalSeconds}"
+            $"PWD={exasol.Password}"
         };
 
         if (!string.IsNullOrWhiteSpace(exasol.Fingerprint))

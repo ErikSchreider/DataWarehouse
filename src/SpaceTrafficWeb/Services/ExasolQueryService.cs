@@ -94,8 +94,7 @@ public sealed class ExasolQueryService(IOptions<ExasolOptions> options, ILogger<
             $"Driver={{{EscapeDriverName(exasol.OdbcDriver)}}}",
             $"EXAHOST={exasol.Host}:{exasol.Port}",
             $"UID={exasol.Username}",
-            $"PWD={exasol.Password}",
-            $"CONNECTIONTIMEOUT={(int)exasol.ConnectionTimeout.TotalSeconds}");
+            $"PWD={exasol.Password}");
     }
 
     private static string EscapeDriverName(string driverName)
