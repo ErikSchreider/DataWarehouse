@@ -17,6 +17,7 @@ services:
       dockerfile: Dockerfile
       args:
         EXASOL_ODBC_DRIVER_URL: ${EXASOL_ODBC_DRIVER_URL:-}
+        EXASOL_ODBC_DOWNLOAD_PAGE: ${EXASOL_ODBC_DOWNLOAD_PAGE:-https://downloads.exasol.com/clients-and-drivers/odbc}
     restart: unless-stopped
     depends_on:
       - exasoldb
@@ -42,6 +43,7 @@ services:
       dockerfile: Dockerfile
       args:
         EXASOL_ODBC_DRIVER_URL: ${EXASOL_ODBC_DRIVER_URL:-}
+        EXASOL_ODBC_DOWNLOAD_PAGE: ${EXASOL_ODBC_DOWNLOAD_PAGE:-https://downloads.exasol.com/clients-and-drivers/odbc}
     restart: unless-stopped
     depends_on:
       - exasoldb
