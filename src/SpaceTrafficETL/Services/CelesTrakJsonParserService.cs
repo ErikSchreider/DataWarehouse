@@ -8,6 +8,18 @@ public sealed class CelesTrakJsonParserService(ILogger<CelesTrakJsonParserServic
 {
     public async Task<IReadOnlyList<CelesTrakObject>> ParseFileAsync(RawDataset dataset, CancellationToken cancellationToken)
     {
+        var preview = await ReadPreviewAsync(dataset.RawFilePath, cancellationToken);
+        if (!LooksLikeJson(preview))
+        {
+            logger.LogWarning(
+                "Skipping CelesTrak dataset {SourceName} because the response is not JSON. File: {RawFilePath}. Response starts with: {ResponsePreview}",
+                dataset.SourceName,
+                dataset.RawFilePath,
+                preview.Trim());
+
+            return [];
+        }
+
         await using var stream = File.OpenRead(dataset.RawFilePath);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
 
@@ -78,6 +90,29 @@ public sealed class CelesTrakJsonParserService(ILogger<CelesTrakJsonParserServic
             .Replace("-json", string.Empty, StringComparison.OrdinalIgnoreCase)
             .Trim()
             .ToLowerInvariant();
+    }
+
+    private static async Task<string> ReadPreviewAsync(string path, CancellationToken cancellationToken)
+    {
+        var buffer = new char[512];
+        using var reader = File.OpenText(path);
+        var length = await reader.ReadBlockAsync(buffer, cancellationToken);
+        return new string(buffer, 0, length);
+    }
+
+    private static bool LooksLikeJson(string preview)
+    {
+        foreach (var character in preview)
+        {
+            if (char.IsWhiteSpace(character))
+            {
+                continue;
+            }
+
+            return character is '[' or '{';
+        }
+
+        return false;
     }
 
     private static string? GetString(JsonElement item, string propertyName)
