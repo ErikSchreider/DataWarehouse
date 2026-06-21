@@ -97,6 +97,8 @@ HAVING COUNT(*) > 1;
   Land, Zweck, Orbitklasse, Status und Startdatum. Diese Informationen
   werden je NORAD-ID zu einem Space-Object-Dimensionsdatensatz fusioniert.
 
+
+
 ```sql
 SELECT
     c."norad_id",
