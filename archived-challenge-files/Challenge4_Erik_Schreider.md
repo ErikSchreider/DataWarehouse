@@ -17,6 +17,14 @@ Data Warehousing | Summer Semester 2026 | Prof. Schildgen | OTH Regensburg
 
 ## Data Transformation
 
+<div style="color: red;">
+
+## INFO
+
+Ich habe bei mir zuhause auf meinem Heimserver eine Exasol-Datenbank laufen, daher sind keine Daten auf der Datenbank von der Hochschule. Falls die Daten allerdings dort liegen sollen, kann ich diese nachträglich noch einfügen.
+
+</div>
+
 *How did you perform your data transformation? Fill out the following list with short answers and optionally one example SQL query each. Which tasks were necessary for your project? Why? Why not? How did you do it? Write at least one SQL query here. (Ex. Sheet 4, Exercise 1)*
 
 * Checking data quality and fixing data errors:

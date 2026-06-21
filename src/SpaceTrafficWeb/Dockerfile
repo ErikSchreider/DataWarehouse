@@ -23,7 +23,8 @@ ENV ASPNETCORE_URLS=http://+:8080 \
     DOTNET_RUNNING_IN_CONTAINER=true \
     DOTNET_EnableDiagnostics=0 \
     ODBCSYSINI=/etc \
-    ODBCINI=/etc/odbc.ini
+    ODBCINI=/etc/odbc.ini \
+    LD_LIBRARY_PATH=/opt/exasol/odbc
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl tar unzip unixodbc \
@@ -35,14 +36,18 @@ RUN if [ -n "$EXASOL_ODBC_DRIVER_URL" ] || [ -n "$EXASOL_ODBC_DOWNLOAD_PAGE" ]; 
         driver_url="$EXASOL_ODBC_DRIVER_URL"; \
         if [ -z "$driver_url" ]; then \
             page_base="${EXASOL_ODBC_DOWNLOAD_PAGE%/}"; \
-            curl -fsSL "$EXASOL_ODBC_DOWNLOAD_PAGE" -o /tmp/exasol-odbc-page.html; \
-            driver_url="$(grep -Eoi 'href="[^"]+"' /tmp/exasol-odbc-page.html \
-                | sed -E 's/^href="([^"]+)"/\1/i' \
-                | grep -Ei 'linux|x86_64|amd64' \
-                | grep -Ei 'zip|tar|tgz|gz' \
-                | head -n 1 || true)"; \
-            if [ -n "$driver_url" ] && ! echo "$driver_url" | grep -Eiq '^https?://'; then \
-                driver_url="${page_base}/${driver_url#/}"; \
+            if echo "$EXASOL_ODBC_DOWNLOAD_PAGE" | grep -Eiq '\.(zip|tar|tgz|tar\.gz)($|\?)'; then \
+                driver_url="$EXASOL_ODBC_DOWNLOAD_PAGE"; \
+            else \
+                curl -fsSL "$EXASOL_ODBC_DOWNLOAD_PAGE" -o /tmp/exasol-odbc-page.html; \
+                driver_url="$(grep -Eoi 'href="[^"]+"' /tmp/exasol-odbc-page.html \
+                    | sed -E 's/^href="([^"]+)"/\1/i' \
+                    | grep -Ei 'linux|x86_64|amd64' \
+                    | grep -Ei 'zip|tar|tgz|gz' \
+                    | head -n 1 || true)"; \
+                if [ -n "$driver_url" ] && ! echo "$driver_url" | grep -Eiq '^https?://'; then \
+                    driver_url="${page_base}/${driver_url#/}"; \
+                fi; \
             fi; \
         fi; \
         if [ -z "$driver_url" ]; then \
