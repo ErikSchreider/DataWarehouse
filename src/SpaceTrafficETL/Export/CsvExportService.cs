@@ -13,16 +13,37 @@ public sealed class CsvExportService(IOptions<SpaceTrafficOptions> options, ILog
 {
     private const string CelesTrakFileName = "stg_celestrak_objects.csv";
     private const string UcsFileName = "stg_ucs_satellites.csv";
+    private const string LaunchFileName = "stg_launch_events.csv";
 
     public async Task<string> ExportCelesTrakObjectsAsync(
-        IReadOnlyCollection<TleObject> objects,
+        IReadOnlyCollection<CelesTrakObject> objects,
         DateTimeOffset runTimestamp,
         CancellationToken cancellationToken)
     {
         var path = GetOutputPath(runTimestamp, CelesTrakFileName);
-        await WriteRecordsAsync(path, objects.OrderBy(record => record.NoradId), new CelesTrakObjectMap(), cancellationToken);
+        await WriteRecordsAsync(
+            path,
+            objects.OrderBy(record => record.NoradId).ThenBy(record => record.Epoch).ThenBy(record => record.SourceGroup),
+            new CelesTrakObjectMap(),
+            cancellationToken);
 
         logger.LogInformation("Exported {RecordCount} CelesTrak objects to {CsvPath}", objects.Count, path);
+        return path;
+    }
+
+    public async Task<string> ExportLaunchesAsync(
+        IReadOnlyCollection<LaunchRecord> launches,
+        DateTimeOffset runTimestamp,
+        CancellationToken cancellationToken)
+    {
+        var path = GetOutputPath(runTimestamp, LaunchFileName);
+        await WriteRecordsAsync(
+            path,
+            launches.OrderBy(record => record.LaunchDate).ThenBy(record => record.LaunchName),
+            new LaunchRecordMap(),
+            cancellationToken);
+
+        logger.LogInformation("Exported {RecordCount} launch events to {CsvPath}", launches.Count, path);
         return path;
     }
 
@@ -87,20 +108,18 @@ public sealed class CsvExportService(IOptions<SpaceTrafficOptions> options, ILog
         return Path.Combine(outputDirectory, fileName);
     }
 
-    private sealed class CelesTrakObjectMap : ClassMap<TleObject>
+    private sealed class CelesTrakObjectMap : ClassMap<CelesTrakObject>
     {
         public CelesTrakObjectMap()
         {
             Map(record => record.ObjectName).Name("object_name");
             Map(record => record.NoradId).Name("norad_id");
-            Map(record => record.Line1).Name("tle_line1");
-            Map(record => record.Line2).Name("tle_line2");
-            Map().Name("source_group").Convert(_ => "celestrak");
             Map(record => record.Epoch).Name("epoch").TypeConverterOption.Format("yyyy-MM-dd HH:mm:ss.ffffff");
             Map(record => record.InclinationDegrees).Name("inclination_deg");
             Map(record => record.Eccentricity).Name("eccentricity");
             Map(record => record.MeanMotionRevolutionsPerDay).Name("mean_motion");
-            Map(record => record.ParsedAt).Name("imported_at").TypeConverterOption.Format("yyyy-MM-dd HH:mm:ss.ffffff");
+            Map(record => record.SourceGroup).Name("source_group");
+            Map(record => record.DownloadedAt).Name("imported_at").TypeConverterOption.Format("yyyy-MM-dd HH:mm:ss.ffffff");
         }
     }
 
@@ -116,6 +135,22 @@ public sealed class CsvExportService(IOptions<SpaceTrafficOptions> options, ILog
             Map(record => record.OrbitClass).Name("orbit_type");
             Map(record => record.OperationalStatus).Name("operational_status");
             Map(record => record.LaunchDate).Name("launch_date").TypeConverterOption.Format("yyyy-MM-dd");
+            Map(record => record.DownloadedAt).Name("imported_at").TypeConverterOption.Format("yyyy-MM-dd HH:mm:ss.ffffff");
+        }
+    }
+
+    private sealed class LaunchRecordMap : ClassMap<LaunchRecord>
+    {
+        public LaunchRecordMap()
+        {
+            Map(record => record.LaunchId).Name("launch_id");
+            Map(record => record.LaunchName).Name("launch_name");
+            Map(record => record.LaunchDate).Name("launch_date").TypeConverterOption.Format("yyyy-MM-dd HH:mm:ss.ffffff");
+            Map(record => record.LaunchProvider).Name("launch_provider");
+            Map(record => record.RocketName).Name("rocket_name");
+            Map(record => record.LaunchCountry).Name("launch_country");
+            Map(record => record.LaunchStatus).Name("launch_status");
+            Map(record => record.PayloadCount).Name("payload_count");
             Map(record => record.DownloadedAt).Name("imported_at").TypeConverterOption.Format("yyyy-MM-dd HH:mm:ss.ffffff");
         }
     }

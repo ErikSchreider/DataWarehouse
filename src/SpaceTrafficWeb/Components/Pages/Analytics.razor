@@ -1,0 +1,260 @@
+@page "/analytics"
+@inject IAnalyticsService AnalyticsService
+
+<PageTitle>Analytics</PageTitle>
+
+<div class="page-heading">
+    <div>
+        <h1 class="h3 mb-1">Space Traffic Analytics</h1>
+        <p class="text-secondary mb-0">Exasol analysis results from the warehouse schema.</p>
+    </div>
+</div>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (analytics is null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <section class="analysis-section">
+        <div class="section-header">
+            <h2>Orbit and object mix</h2>
+            <span>GROUPING SETS</span>
+        </div>
+        <div class="visual-list">
+            @foreach (var row in analytics.OrbitRollup)
+            {
+                <div class="visual-row">
+                    <div class="visual-label">
+                        <strong>@row.OrbitClass</strong>
+                        <span>@row.ObjectType</span>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill fill-primary" style="@GetWidthStyle(row.ObjectCount, MaxOrbitRollupCount)"></div>
+                    </div>
+                    <div class="visual-value">@FormatNumber(row.ObjectCount)</div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <div class="analysis-grid">
+        <section class="analysis-section">
+            <div class="section-header">
+                <h2>Daily observation trend</h2>
+                <span>Window avg</span>
+            </div>
+            <div class="spark-bars">
+                @foreach (var row in analytics.DailyTrend.OrderBy(row => row.ObservationDate))
+                {
+                    <div class="spark-column" title="@($"{row.ObservationDate:yyyy-MM-dd}: {row.ObjectCount:N0}")">
+                        <div class="spark-fill" style="@GetHeightStyle(row.ObjectCount, MaxDailyTrendCount)"></div>
+                    </div>
+                }
+            </div>
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th class="text-end">Objects</th>
+                        <th class="text-end">7 day avg</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in analytics.DailyTrend.Take(8))
+                    {
+                        <tr>
+                            <td>@row.ObservationDate.ToString("yyyy-MM-dd")</td>
+                            <td class="text-end">@FormatNumber(row.ObjectCount)</td>
+                            <td class="text-end">@FormatNumber(row.MovingAverageObjectCount)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+
+        <section class="analysis-section">
+            <div class="section-header">
+                <h2>Top operators</h2>
+                <span>DENSE_RANK</span>
+            </div>
+            <div class="rank-list">
+                @foreach (var row in analytics.OperatorRanking)
+                {
+                    <div class="rank-row">
+                        <div class="rank-badge">@row.Rank</div>
+                        <div>
+                            <strong>@row.OperatorName</strong>
+                            <span>@row.Country</span>
+                        </div>
+                        <div class="rank-count">@FormatNumber(row.ObjectCount)</div>
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+
+    <div class="analysis-grid">
+        <section class="analysis-section">
+            <div class="section-header">
+                <h2>Orbit statistics</h2>
+                <span>STDDEV_POP</span>
+            </div>
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Orbit</th>
+                        <th class="text-end">Objects</th>
+                        <th class="text-end">Avg altitude</th>
+                        <th class="text-end">Std dev</th>
+                        <th class="text-end">Risk</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in analytics.OrbitStatistics)
+                    {
+                        <tr>
+                            <td>@row.OrbitClass</td>
+                            <td class="text-end">@FormatNumber(row.ObjectCount)</td>
+                            <td class="text-end">@FormatNumber(row.AverageAltitudeKm)</td>
+                            <td class="text-end">@FormatNumber(row.AltitudeStdDevKm)</td>
+                            <td class="text-end">@FormatNumber(row.AverageRiskScore)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+
+        <section class="analysis-section">
+            <div class="section-header">
+                <h2>Skyline risk groups</h2>
+                <span>Skyline</span>
+            </div>
+            <div class="visual-list">
+                @foreach (var row in analytics.SkylineRisks)
+                {
+                    <div class="visual-row">
+                        <div class="visual-label">
+                            <strong>@row.OrbitClass</strong>
+                            <span>@row.OperatorName</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill fill-risk" style="@GetWidthStyle(row.AverageRiskScore, MaxSkylineRisk)"></div>
+                        </div>
+                        <div class="visual-value">@FormatNumber(row.AverageRiskScore)</div>
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+
+    <div class="analysis-grid">
+        <section class="analysis-section">
+            <div class="section-header">
+                <h2>Purpose distribution</h2>
+                <span>Top 10</span>
+            </div>
+            <div class="visual-list">
+                @foreach (var row in analytics.PurposeDistribution)
+                {
+                    <div class="visual-row">
+                        <div class="visual-label">
+                            <strong>@row.Purpose</strong>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill fill-purpose" style="@GetWidthStyle(row.ObjectCount, MaxPurposeCount)"></div>
+                        </div>
+                        <div class="visual-value">@FormatNumber(row.ObjectCount)</div>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <section class="analysis-section">
+            <div class="section-header">
+                <h2>Source coverage</h2>
+                <span>Warehouse</span>
+            </div>
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Source</th>
+                        <th class="text-end">Observations</th>
+                        <th class="text-end">Last observation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in analytics.SourceCoverage)
+                    {
+                        <tr>
+                            <td>@row.SourceName</td>
+                            <td class="text-end">@FormatNumber(row.ObservationCount)</td>
+                            <td class="text-end">@FormatDate(row.LastObservationTimestamp)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+    </div>
+}
+
+@code {
+    private AnalyticsDashboard? analytics;
+    private string? errorMessage;
+
+    private long MaxOrbitRollupCount => analytics?.OrbitRollup.DefaultIfEmpty().Max(row => row?.ObjectCount ?? 0) ?? 0;
+
+    private long MaxDailyTrendCount => analytics?.DailyTrend.DefaultIfEmpty().Max(row => row?.ObjectCount ?? 0) ?? 0;
+
+    private long MaxPurposeCount => analytics?.PurposeDistribution.DefaultIfEmpty().Max(row => row?.ObjectCount ?? 0) ?? 0;
+
+    private double MaxSkylineRisk => analytics?.SkylineRisks.DefaultIfEmpty().Max(row => row?.AverageRiskScore ?? 0) ?? 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            analytics = await AnalyticsService.GetAnalyticsAsync(CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            errorMessage = exception.Message;
+        }
+    }
+
+    private static string GetWidthStyle(long value, long max)
+    {
+        return GetWidthStyle((double)value, max);
+    }
+
+    private static string GetWidthStyle(double? value, double max)
+    {
+        var percent = max <= 0 ? 0 : Math.Clamp((value ?? 0) / max * 100, 2, 100);
+        return $"width: {percent:0.##}%;";
+    }
+
+    private static string GetHeightStyle(long value, long max)
+    {
+        var percent = max <= 0 ? 0 : Math.Clamp((double)value / max * 100, 4, 100);
+        return $"height: {percent:0.##}%;";
+    }
+
+    private static string FormatNumber(long value)
+    {
+        return value.ToString("N0");
+    }
+
+    private static string FormatNumber(double? value)
+    {
+        return value?.ToString("N2") ?? "n/a";
+    }
+
+    private static string FormatDate(DateTime? value)
+    {
+        return value?.ToString("yyyy-MM-dd HH:mm") ?? "n/a";
+    }
+}

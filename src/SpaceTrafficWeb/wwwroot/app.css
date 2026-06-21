@@ -1,5 +1,6 @@
 body {
-    background: #f7f8fa;
+    background: #f5f6f8;
+    color: #202428;
 }
 
 .navbar {
@@ -28,4 +29,172 @@ body {
 .small-value {
     font-size: 1rem;
     padding-top: 0.5rem;
+}
+
+.page-heading {
+    align-items: flex-end;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+}
+
+.analysis-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 1rem;
+}
+
+.analysis-section {
+    background: #fff;
+    border: 1px solid #d9dde3;
+    border-radius: 6px;
+    padding: 1rem;
+}
+
+.section-header {
+    align-items: center;
+    border-bottom: 1px solid #eef0f3;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.65rem;
+}
+
+.section-header h2 {
+    font-size: 1rem;
+    margin: 0;
+}
+
+.section-header span {
+    color: #6b7280;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.visual-list,
+.rank-list {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.visual-row {
+    align-items: center;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: minmax(9rem, 1.3fr) minmax(8rem, 2fr) 5rem;
+}
+
+.visual-label {
+    min-width: 0;
+}
+
+.visual-label strong,
+.rank-row strong {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.visual-label span,
+.rank-row span {
+    color: #6b7280;
+    display: block;
+    font-size: 0.82rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.visual-value {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.bar-track {
+    background: #edf0f3;
+    border-radius: 999px;
+    height: 0.7rem;
+    overflow: hidden;
+}
+
+.bar-fill {
+    border-radius: inherit;
+    height: 100%;
+    min-width: 0.15rem;
+}
+
+.fill-primary {
+    background: #2563eb;
+}
+
+.fill-risk {
+    background: #dc2626;
+}
+
+.fill-purpose {
+    background: #0f766e;
+}
+
+.spark-bars {
+    align-items: end;
+    border-bottom: 1px solid #d9dde3;
+    display: grid;
+    gap: 0.25rem;
+    grid-template-columns: repeat(30, minmax(0, 1fr));
+    height: 9rem;
+    margin-bottom: 1rem;
+}
+
+.spark-column {
+    align-items: end;
+    display: flex;
+    height: 100%;
+}
+
+.spark-fill {
+    background: #475569;
+    border-radius: 3px 3px 0 0;
+    min-height: 0.2rem;
+    width: 100%;
+}
+
+.rank-row {
+    align-items: center;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 2.2rem minmax(0, 1fr) 5rem;
+}
+
+.rank-badge {
+    align-items: center;
+    background: #e7eefb;
+    border-radius: 999px;
+    color: #1d4ed8;
+    display: inline-flex;
+    font-weight: 700;
+    height: 2rem;
+    justify-content: center;
+    width: 2rem;
+}
+
+.rank-count {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+@media (max-width: 900px) {
+    .analysis-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .visual-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .visual-value {
+        text-align: left;
+    }
 }

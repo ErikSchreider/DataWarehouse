@@ -7,11 +7,15 @@ services:
     image: space-traffic-web:latest
     restart: unless-stopped
     ports:
-      - "8085:8080"
+      - "${WEB_PORT:-8085}:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      EXASOL_HOST: 192.168.178.155
-      EXASOL_PORT: 8563
-      EXASOL_SCHEMA: SPACE_TRAFFIC
-      EXASOL_USER: sys
-      EXASOL_PASSWORD: exasol
+      EXASOL_HOST: ${EXASOL_HOST}
+      EXASOL_PORT: ${EXASOL_PORT:-8563}
+      EXASOL_SCHEMA: ${EXASOL_SCHEMA:-SPACE_TRAFFIC}
+      EXASOL_USER: ${EXASOL_USER}
+      EXASOL_PASSWORD: ${EXASOL_PASSWORD}
+      EXASOL_ODBC_DRIVER: ${EXASOL_ODBC_DRIVER:-EXASOL}
+      DATA_PROTECTION_KEYS_DIR: /app/data-protection-keys
+    volumes:
+      - ${WEB_KEYS_DIR:-/opt/space-traffic-web/keys}:/app/data-protection-keys

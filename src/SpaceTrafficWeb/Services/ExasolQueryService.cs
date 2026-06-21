@@ -8,6 +8,9 @@ namespace SpaceTrafficWeb.Services;
 public sealed class ExasolQueryService(IOptions<ExasolOptions> options, ILogger<ExasolQueryService> logger)
     : IExasolQueryService
 {
+    private const int MaxOpenAttempts = 5;
+    private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(2);
+
     public async Task<IReadOnlyList<T>> QueryAsync<T>(
         string sql,
         Func<DbDataReader, T> map,
@@ -40,12 +43,33 @@ public sealed class ExasolQueryService(IOptions<ExasolOptions> options, ILogger<
 
     private async Task<DbConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {
-        var connection = new OdbcConnection(BuildConnectionString(options.Value));
+        for (var attempt = 1; attempt <= MaxOpenAttempts; attempt++)
+        {
+            var connection = new OdbcConnection(BuildConnectionString(options.Value));
 
-        logger.LogDebug("Opening read-only Exasol connection to {Host}:{Port}", options.Value.Host, options.Value.Port);
-        await connection.OpenAsync(cancellationToken);
+            try
+            {
+                logger.LogDebug("Opening read-only Exasol connection to {Host}:{Port}", options.Value.Host, options.Value.Port);
+                await connection.OpenAsync(cancellationToken);
+                return connection;
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException && attempt < MaxOpenAttempts)
+            {
+                await connection.DisposeAsync();
+                logger.LogWarning(
+                    exception,
+                    "Exasol connection attempt {Attempt}/{MaxAttempts} failed; retrying in {RetryDelay}",
+                    attempt,
+                    MaxOpenAttempts,
+                    RetryDelay);
 
-        return connection;
+                await Task.Delay(RetryDelay, cancellationToken);
+            }
+        }
+
+        var finalConnection = new OdbcConnection(BuildConnectionString(options.Value));
+        await finalConnection.OpenAsync(cancellationToken);
+        return finalConnection;
     }
 
     private string RenderSql(string sql)

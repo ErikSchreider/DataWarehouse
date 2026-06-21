@@ -7,12 +7,16 @@ services:
     image: space-traffic-etl:latest
     restart: unless-stopped
     environment:
-      EXASOL_HOST: 192.168.178.155
-      EXASOL_PORT: 8563
-      EXASOL_SCHEMA: SPACE_TRAFFIC
-      EXASOL_USER: sys
-      EXASOL_PASSWORD: exasol
-      ETL_INTERVAL_HOURS: 24
+      EXASOL_HOST: ${EXASOL_HOST}
+      EXASOL_PORT: ${EXASOL_PORT:-8563}
+      EXASOL_SCHEMA: ${EXASOL_SCHEMA:-SPACE_TRAFFIC}
+      EXASOL_USER: ${EXASOL_USER}
+      EXASOL_PASSWORD: ${EXASOL_PASSWORD}
+      EXASOL_ODBC_DRIVER: ${EXASOL_ODBC_DRIVER:-EXASOL}
+      ETL_INTERVAL_HOURS: ${ETL_INTERVAL_HOURS:-24}
+      SpaceTraffic__Ucs__SatelliteDatabaseDownloadUrl: ${UCS_DOWNLOAD_URL:-https://www.ucsusa.org/resources/satellite-database}
+      SpaceTraffic__Ucs__RawFileExtension: ${UCS_RAW_FILE_EXTENSION:-.html}
+      SpaceTraffic__LaunchData__LaunchesUrl: ${SPACEDEVS_LAUNCH_URL:-https://ll.thespacedevs.com/2.2.0/launch/}
       SpaceTraffic__DataDirectories__StorageRoot: /data
     volumes:
-      - /opt/space-traffic-etl/data:/data
+      - ${ETL_DATA_DIR:-/opt/space-traffic-etl/data}:/data

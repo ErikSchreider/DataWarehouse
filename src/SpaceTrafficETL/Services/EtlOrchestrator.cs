@@ -6,8 +6,9 @@ namespace SpaceTrafficETL.Services;
 
 public sealed class EtlOrchestrator(
     IDownloadService downloadService,
-    ITleParserService tleParserService,
+    ICelesTrakJsonParserService celesTrakJsonParserService,
     IUcsParserService ucsParserService,
+    ILaunchParserService launchParserService,
     ICsvExportService csvExportService,
     IDatabaseMigrationService migrationService,
     IExasolImportService importService,
@@ -25,13 +26,15 @@ public sealed class EtlOrchestrator(
         var rawDatasets = await DownloadAllDatasetsAsync(cancellationToken);
         logger.LogInformation("Download completed with {DatasetCount} raw datasets", rawDatasets.Count);
 
-        logger.LogInformation("Parsing TLE files");
-        var celesTrakObjects = await ParseTleDatasetsAsync(rawDatasets, cancellationToken);
+        logger.LogInformation("Parsing raw data files");
+        var celesTrakObjects = await ParseCelesTrakDatasetsAsync(rawDatasets, cancellationToken);
         var ucsSatellites = await ParseUcsDatasetsAsync(rawDatasets, cancellationToken);
+        var launches = await ParseLaunchDatasetsAsync(rawDatasets, cancellationToken);
         logger.LogInformation(
-            "Parsing result: {ObjectCount} TLE objects and {UcsSatelliteCount} UCS satellites",
+            "Parsing result: {ObjectCount} CelesTrak objects, {UcsSatelliteCount} UCS satellites and {LaunchCount} launches",
             celesTrakObjects.Count,
-            ucsSatellites.Count);
+            ucsSatellites.Count,
+            launches.Count);
 
         logger.LogInformation("Creating staging CSV exports");
         var celesTrakCsvPath = celesTrakObjects.Count > 0
@@ -39,9 +42,10 @@ public sealed class EtlOrchestrator(
             : null;
 
         var ucsCsvPath = await csvExportService.ExportUcsSatellitesAsync(ucsSatellites, runTimestamp, cancellationToken);
+        var launchCsvPath = await csvExportService.ExportLaunchesAsync(launches, runTimestamp, cancellationToken);
 
         logger.LogInformation("Loading staging CSV files into Exasol");
-        var importResults = await importService.ReloadStagingTablesAsync(celesTrakCsvPath, ucsCsvPath, cancellationToken);
+        var importResults = await importService.ReloadStagingTablesAsync(celesTrakCsvPath, ucsCsvPath, launchCsvPath, cancellationToken);
         foreach (var result in importResults)
         {
             logger.LogInformation("Loaded {RowCount} rows into {TableName}", result.RowCount, result.TableName);
@@ -71,18 +75,18 @@ public sealed class EtlOrchestrator(
         return datasets;
     }
 
-    private async Task<IReadOnlyList<TleObject>> ParseTleDatasetsAsync(
+    private async Task<IReadOnlyList<CelesTrakObject>> ParseCelesTrakDatasetsAsync(
         IEnumerable<RawDataset> rawDatasets,
         CancellationToken cancellationToken)
     {
-        var objects = new List<TleObject>();
+        var objects = new List<CelesTrakObject>();
 
-        foreach (var rawDataset in rawDatasets.Where(dataset => dataset.Kind == DataSourceKind.Tle))
+        foreach (var rawDataset in rawDatasets.Where(dataset => dataset.Kind == DataSourceKind.CelesTrakJson))
         {
-            var parsed = await tleParserService.ParseFileAsync(rawDataset.RawFilePath, cancellationToken);
+            var parsed = await celesTrakJsonParserService.ParseFileAsync(rawDataset, cancellationToken);
             objects.AddRange(parsed);
             logger.LogInformation(
-                "Parsed {ObjectCount} TLE objects from {SourceName}",
+                "Parsed {ObjectCount} CelesTrak objects from {SourceName}",
                 parsed.Count,
                 rawDataset.SourceName);
         }
@@ -107,5 +111,24 @@ public sealed class EtlOrchestrator(
         }
 
         return satellites;
+    }
+
+    private async Task<IReadOnlyList<LaunchRecord>> ParseLaunchDatasetsAsync(
+        IEnumerable<RawDataset> rawDatasets,
+        CancellationToken cancellationToken)
+    {
+        var launches = new List<LaunchRecord>();
+
+        foreach (var rawDataset in rawDatasets.Where(dataset => dataset.Kind == DataSourceKind.SpaceDevsLaunches))
+        {
+            var parsed = await launchParserService.ParseFileAsync(rawDataset, cancellationToken);
+            launches.AddRange(parsed);
+            logger.LogInformation(
+                "Parsed {LaunchCount} launches from {SourceName}",
+                parsed.Count,
+                rawDataset.SourceName);
+        }
+
+        return launches;
     }
 }

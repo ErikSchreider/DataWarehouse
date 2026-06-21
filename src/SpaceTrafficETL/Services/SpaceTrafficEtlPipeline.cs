@@ -6,7 +6,9 @@ namespace SpaceTrafficETL.Services;
 
 public sealed class SpaceTrafficEtlPipeline(
     IDownloadService downloadService,
-    ITleParserService tleParserService,
+    ICelesTrakJsonParserService celesTrakJsonParserService,
+    IUcsParserService ucsParserService,
+    ILaunchParserService launchParserService,
     ICsvExportService csvExportService,
     ILogger<SpaceTrafficEtlPipeline> logger)
     : ISpaceTrafficEtlPipeline
@@ -14,8 +16,9 @@ public sealed class SpaceTrafficEtlPipeline(
     public async Task RunOnceAsync(CancellationToken cancellationToken)
     {
         var runTimestamp = DateTimeOffset.UtcNow;
-        var celesTrakObjects = new List<TleObject>();
+        var celesTrakObjects = new List<CelesTrakObject>();
         var ucsSatellites = new List<UcsSatellite>();
+        var launches = new List<LaunchRecord>();
 
         logger.LogInformation("ETL stage 1/3: downloading all configured datasets");
         var rawDatasets = await DownloadRawDatasetsAsync(cancellationToken);
@@ -26,10 +29,20 @@ public sealed class SpaceTrafficEtlPipeline(
         {
             try
             {
-                if (rawDataset.Kind == DataSourceKind.Tle)
+                if (rawDataset.Kind == DataSourceKind.CelesTrakJson)
                 {
-                    var tleObjects = await tleParserService.ParseFileAsync(rawDataset.RawFilePath, cancellationToken);
-                    celesTrakObjects.AddRange(tleObjects);
+                    var objects = await celesTrakJsonParserService.ParseFileAsync(rawDataset, cancellationToken);
+                    celesTrakObjects.AddRange(objects);
+                }
+                else if (rawDataset.Kind == DataSourceKind.UcsSatelliteDatabase)
+                {
+                    var satellites = await ucsParserService.ParseFileAsync(rawDataset, cancellationToken);
+                    ucsSatellites.AddRange(satellites);
+                }
+                else if (rawDataset.Kind == DataSourceKind.SpaceDevsLaunches)
+                {
+                    var parsedLaunches = await launchParserService.ParseFileAsync(rawDataset, cancellationToken);
+                    launches.AddRange(parsedLaunches);
                 }
                 else
                 {
@@ -46,9 +59,10 @@ public sealed class SpaceTrafficEtlPipeline(
         }
 
         logger.LogInformation(
-            "Parsed {CelesTrakObjectCount} CelesTrak TLE objects and {UcsSatelliteCount} UCS satellite rows",
+            "Parsed {CelesTrakObjectCount} CelesTrak objects, {UcsSatelliteCount} UCS satellite rows and {LaunchCount} launches",
             celesTrakObjects.Count,
-            ucsSatellites.Count);
+            ucsSatellites.Count,
+            launches.Count);
 
         logger.LogInformation("ETL stage 3/3: creating staging CSV exports");
 
@@ -64,6 +78,9 @@ public sealed class SpaceTrafficEtlPipeline(
 
         var ucsStagingPath = await csvExportService.ExportUcsSatellitesAsync(ucsSatellites, runTimestamp, cancellationToken);
         logger.LogInformation("Created UCS staging CSV with {RecordCount} records at {StagingPath}", ucsSatellites.Count, ucsStagingPath);
+
+        var launchStagingPath = await csvExportService.ExportLaunchesAsync(launches, runTimestamp, cancellationToken);
+        logger.LogInformation("Created launch staging CSV with {RecordCount} records at {StagingPath}", launches.Count, launchStagingPath);
     }
 
     private async Task<IReadOnlyList<RawDataset>> DownloadRawDatasetsAsync(CancellationToken cancellationToken)

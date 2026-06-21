@@ -2,11 +2,21 @@ OPEN SCHEMA ${SCHEMA};
 
 MERGE INTO "dim_source" target
 USING (
-    SELECT 1 AS "source_id", 'CelesTrak' AS "source_name", 'TLE' AS "source_type", 'https://celestrak.org' AS "source_url"
+    SELECT 1 AS "source_id", 'CelesTrak active' AS "source_name", 'CELESTRAK_GP_JSON' AS "source_type", 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=json' AS "source_url"
     UNION ALL
-    SELECT 2 AS "source_id", 'UCS Satellite Database' AS "source_name", 'SATELLITE_DATABASE' AS "source_type", 'https://www.ucsusa.org/resources/satellite-database' AS "source_url"
+    SELECT 2 AS "source_id", 'CelesTrak debris' AS "source_name", 'CELESTRAK_GP_JSON' AS "source_type", 'https://celestrak.org/NORAD/elements/gp.php?GROUP=debris&FORMAT=json' AS "source_url"
     UNION ALL
-    SELECT 3 AS "source_id", 'Launch Data API' AS "source_name", 'LAUNCH_API' AS "source_type", 'https://ll.thespacedevs.com' AS "source_url"
+    SELECT 3 AS "source_id", 'CelesTrak starlink' AS "source_name", 'CELESTRAK_GP_JSON' AS "source_type", 'https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=json' AS "source_url"
+    UNION ALL
+    SELECT 4 AS "source_id", 'CelesTrak geo' AS "source_name", 'CELESTRAK_GP_JSON' AS "source_type", 'https://celestrak.org/NORAD/elements/gp.php?GROUP=geo&FORMAT=json' AS "source_url"
+    UNION ALL
+    SELECT 5 AS "source_id", 'CelesTrak stations' AS "source_name", 'CELESTRAK_GP_JSON' AS "source_type", 'https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json' AS "source_url"
+    UNION ALL
+    SELECT 6 AS "source_id", 'CelesTrak last-30-days' AS "source_name", 'CELESTRAK_GP_JSON' AS "source_type", 'https://celestrak.org/NORAD/elements/gp.php?GROUP=last-30-days&FORMAT=json' AS "source_url"
+    UNION ALL
+    SELECT 100 AS "source_id", 'UCS Satellite Database' AS "source_name", 'SATELLITE_DATABASE' AS "source_type", 'https://www.ucsusa.org/resources/satellite-database' AS "source_url"
+    UNION ALL
+    SELECT 200 AS "source_id", 'SpaceDevs Launch Library API' AS "source_name", 'LAUNCH_API' AS "source_type", 'https://ll.thespacedevs.com/2.2.0/launch/' AS "source_url"
 ) source
 ON target."source_id" = source."source_id"
 WHEN MATCHED THEN UPDATE SET
@@ -40,7 +50,15 @@ USING (
             COALESCE("operator_name", 'UNKNOWN') AS "operator_name",
             'UNKNOWN' AS "operator_type",
             MAX("country") AS "country"
-        FROM "stg_ucs_satellites"
+        FROM (
+            SELECT
+                "norad_id",
+                MAX("operator_name") AS "operator_name",
+                MAX("country") AS "country"
+            FROM "stg_ucs_satellites"
+            WHERE "norad_id" IS NOT NULL
+            GROUP BY "norad_id"
+        ) dedup_ucs
         GROUP BY COALESCE("operator_name", 'UNKNOWN')
     ) source
     LEFT JOIN "dim_operator" existing
@@ -57,7 +75,7 @@ USING (
                 FROM "dim_operator" dim
                 WHERE dim."operator_name" = COALESCE(stg."operator_name", 'UNKNOWN')
             )
-        )
+        ) new_operators
     ) missing
         ON source."operator_name" = missing."operator_name"
     CROSS JOIN (
@@ -123,12 +141,23 @@ USING (
         c."norad_id" AS "object_id",
         c."norad_id",
         MAX(c."object_name") AS "object_name",
-        'SATELLITE' AS "object_type",
+        CASE
+            WHEN MAX(c."source_group") = 'debris' THEN 'DEBRIS'
+            ELSE 'SATELLITE'
+        END AS "object_type",
         MAX(u."operational_status") AS "operational_status",
         MAX(u."purpose") AS "purpose",
         MAX(u."launch_date") AS "launch_date",
         MAX(o."operator_id") AS "operator_id"
-    FROM "stg_celestrak_objects" c
+    FROM (
+        SELECT
+            "norad_id",
+            MAX("object_name") AS "object_name",
+            MAX("source_group") AS "source_group"
+        FROM "stg_celestrak_objects"
+        WHERE "norad_id" IS NOT NULL
+        GROUP BY "norad_id"
+    ) c
     LEFT JOIN "stg_ucs_satellites" u
         ON c."norad_id" = u."norad_id"
     LEFT JOIN "dim_operator" o

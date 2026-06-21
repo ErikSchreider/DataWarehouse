@@ -1,8 +1,12 @@
+using Microsoft.AspNetCore.DataProtection;
 using SpaceTrafficWeb.Configuration;
 using SpaceTrafficWeb.Components;
 using SpaceTrafficWeb.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 builder.Configuration.AddInMemoryCollection(BuildEnvironmentOverrides(builder.Configuration));
 
@@ -18,8 +22,17 @@ builder.Services
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+var dataProtectionKeysDirectory = builder.Configuration["DATA_PROTECTION_KEYS_DIR"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, ".data-protection-keys");
+
+builder.Services
+    .AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysDirectory))
+    .SetApplicationName("SpaceTrafficWeb");
+
 builder.Services.AddScoped<IExasolQueryService, ExasolQueryService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
 var app = builder.Build();
 
@@ -47,6 +60,7 @@ static Dictionary<string, string?> BuildEnvironmentOverrides(IConfiguration conf
     AddIfPresent(overrides, "Exasol:Schema", configuration["EXASOL_SCHEMA"]);
     AddIfPresent(overrides, "Exasol:Username", configuration["EXASOL_USER"]);
     AddIfPresent(overrides, "Exasol:Password", configuration["EXASOL_PASSWORD"]);
+    AddIfPresent(overrides, "Exasol:OdbcDriver", configuration["EXASOL_ODBC_DRIVER"]);
 
     return overrides;
 }

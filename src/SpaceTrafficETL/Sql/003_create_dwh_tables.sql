@@ -56,10 +56,15 @@ CREATE TABLE "fact_object_position_observation"
 CREATE TABLE "fact_launch_event"
 (
     "launch_event_id" DECIMAL(18,0),
+    "launch_id" VARCHAR(128),
     "source_id" DECIMAL(18,0),
     "launch_timestamp" TIMESTAMP,
     "launch_name" VARCHAR(512),
     "provider_name" VARCHAR(512),
+    "rocket_name" VARCHAR(512),
+    "launch_country" VARCHAR(128),
+    "launch_status" VARCHAR(128),
     "launch_site" VARCHAR(512),
-    "payload_count" DECIMAL(18,0)
+    "payload_count" DECIMAL(18,0),
+    "success_count" DECIMAL(18,0)
 );

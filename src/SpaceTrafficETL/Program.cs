@@ -30,6 +30,8 @@ builder.Services.AddHttpClient(DownloadService.HttpClientName, (serviceProvider,
 });
 
 builder.Services.AddSingleton<IDownloadService, DownloadService>();
+builder.Services.AddSingleton<ICelesTrakJsonParserService, CelesTrakJsonParserService>();
+builder.Services.AddSingleton<ILaunchParserService, LaunchParserService>();
 builder.Services.AddSingleton<ITleParserService, TleParserService>();
 builder.Services.AddSingleton<IUcsParserService, UcsParserService>();
 builder.Services.AddHttpClient<IDataSourceDownloader, HttpDataSourceDownloader>((serviceProvider, client) =>
@@ -62,6 +64,7 @@ static Dictionary<string, string?> BuildEnvironmentOverrides(IConfiguration conf
     AddIfPresent(overrides, "SpaceTraffic:Exasol:Schema", configuration["EXASOL_SCHEMA"]);
     AddIfPresent(overrides, "SpaceTraffic:Exasol:Username", configuration["EXASOL_USER"]);
     AddIfPresent(overrides, "SpaceTraffic:Exasol:Password", configuration["EXASOL_PASSWORD"]);
+    AddIfPresent(overrides, "SpaceTraffic:Exasol:OdbcDriver", configuration["EXASOL_ODBC_DRIVER"]);
 
     if (double.TryParse(configuration["ETL_INTERVAL_HOURS"], out var intervalHours) && intervalHours > 0)
     {

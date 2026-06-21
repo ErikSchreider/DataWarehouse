@@ -8,14 +8,38 @@ namespace SpaceTrafficETL.Services;
 public sealed class ExasolConnectionFactory(IOptions<SpaceTrafficOptions> options, ILogger<ExasolConnectionFactory> logger)
     : IExasolConnectionFactory
 {
+    private const int MaxOpenAttempts = 30;
+    private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(10);
+
     public async Task<DbConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {
-        var connection = new OdbcConnection(BuildConnectionString(options.Value.Exasol));
+        for (var attempt = 1; attempt <= MaxOpenAttempts; attempt++)
+        {
+            var connection = new OdbcConnection(BuildConnectionString(options.Value.Exasol));
 
-        logger.LogDebug("Opening Exasol ODBC connection to {Host}:{Port}", options.Value.Exasol.Host, options.Value.Exasol.Port);
-        await connection.OpenAsync(cancellationToken);
+            try
+            {
+                logger.LogDebug("Opening Exasol ODBC connection to {Host}:{Port}", options.Value.Exasol.Host, options.Value.Exasol.Port);
+                await connection.OpenAsync(cancellationToken);
+                return connection;
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException && attempt < MaxOpenAttempts)
+            {
+                await connection.DisposeAsync();
+                logger.LogWarning(
+                    exception,
+                    "Exasol connection attempt {Attempt}/{MaxAttempts} failed; retrying in {RetryDelay}",
+                    attempt,
+                    MaxOpenAttempts,
+                    RetryDelay);
 
-        return connection;
+                await Task.Delay(RetryDelay, cancellationToken);
+            }
+        }
+
+        var finalConnection = new OdbcConnection(BuildConnectionString(options.Value.Exasol));
+        await finalConnection.OpenAsync(cancellationToken);
+        return finalConnection;
     }
 
     private static string BuildConnectionString(ExasolOptions exasol)

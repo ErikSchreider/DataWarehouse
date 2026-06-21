@@ -95,16 +95,54 @@ public sealed class CelesTrakOptions
     public bool Enabled { get; init; } = true;
 
     [Required]
-    public Uri ActiveSatellitesTleUrl { get; init; } = new("https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle");
+    public DataSourceOptions[] Sources { get; init; } =
+    [
+        new()
+        {
+            Name = "celestrak-active",
+            Kind = DataSourceKind.CelesTrakJson,
+            Url = new("https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=json"),
+            RawFileExtension = ".json"
+        },
+        new()
+        {
+            Name = "celestrak-debris",
+            Kind = DataSourceKind.CelesTrakJson,
+            Url = new("https://celestrak.org/NORAD/elements/gp.php?GROUP=debris&FORMAT=json"),
+            RawFileExtension = ".json"
+        },
+        new()
+        {
+            Name = "celestrak-starlink",
+            Kind = DataSourceKind.CelesTrakJson,
+            Url = new("https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=json"),
+            RawFileExtension = ".json"
+        },
+        new()
+        {
+            Name = "celestrak-geo",
+            Kind = DataSourceKind.CelesTrakJson,
+            Url = new("https://celestrak.org/NORAD/elements/gp.php?GROUP=geo&FORMAT=json"),
+            RawFileExtension = ".json"
+        },
+        new()
+        {
+            Name = "celestrak-stations",
+            Kind = DataSourceKind.CelesTrakJson,
+            Url = new("https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json"),
+            RawFileExtension = ".json"
+        },
+        new()
+        {
+            Name = "celestrak-last-30-days",
+            Kind = DataSourceKind.CelesTrakJson,
+            Url = new("https://celestrak.org/NORAD/elements/gp.php?GROUP=last-30-days&FORMAT=json"),
+            RawFileExtension = ".json"
+        }
+    ];
 
     [Required]
-    public Uri StationsTleUrl { get; init; } = new("https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle");
-
-    [Required]
-    public Uri GpQueryBaseUrl { get; init; } = new("https://celestrak.org/NORAD/elements/gp.php");
-
-    [Required]
-    public string RawFileExtension { get; init; } = ".tle";
+    public string RawFileExtension { get; init; } = ".json";
 }
 
 public sealed class UcsOptions
@@ -123,10 +161,10 @@ public sealed class UcsOptions
 
 public sealed class LaunchDataOptions
 {
-    public bool Enabled { get; init; }
+    public bool Enabled { get; init; } = true;
 
     [Required]
-    public Uri UpcomingLaunchesUrl { get; init; } = new("https://ll.thespacedevs.com/2.3.0/launches/upcoming/");
+    public Uri LaunchesUrl { get; init; } = new("https://ll.thespacedevs.com/2.2.0/launch/");
 
     [Required]
     public string RawFileExtension { get; init; } = ".json";
@@ -163,6 +201,7 @@ public sealed class CsvOptions
 public enum DataSourceKind
 {
     Tle,
+    CelesTrakJson,
     UcsSatelliteDatabase,
     SpaceDevsLaunches
 }

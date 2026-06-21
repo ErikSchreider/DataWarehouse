@@ -14,12 +14,14 @@ public sealed class ExasolImportService(
     public async Task<IReadOnlyList<ExasolImportResult>> ReloadStagingTablesAsync(
         string? celesTrakCsvPath,
         string? ucsCsvPath,
+        string? launchCsvPath,
         CancellationToken cancellationToken)
     {
         await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
 
         await DeleteFromAsync(connection, "stg_celestrak_objects", cancellationToken);
         await DeleteFromAsync(connection, "stg_ucs_satellites", cancellationToken);
+        await DeleteFromAsync(connection, "stg_launch_events", cancellationToken);
 
         var results = new List<ExasolImportResult>();
 
@@ -31,6 +33,11 @@ public sealed class ExasolImportService(
         if (!string.IsNullOrWhiteSpace(ucsCsvPath))
         {
             results.Add(await ImportCsvAsync(connection, "stg_ucs_satellites", ucsCsvPath, cancellationToken));
+        }
+
+        if (!string.IsNullOrWhiteSpace(launchCsvPath))
+        {
+            results.Add(await ImportCsvAsync(connection, "stg_launch_events", launchCsvPath, cancellationToken));
         }
 
         return results;
@@ -64,6 +71,7 @@ public sealed class ExasolImportService(
                 IMPORT INTO {QualifiedTable(tableName)}
                 FROM LOCAL CSV FILE '{EscapeSqlLiteral(csvPath)}'
                 COLUMN SEPARATOR = '{EscapeSqlLiteral(options.Value.Csv.Delimiter)}'
+                COLUMN DELIMITER = '"'
                 SKIP = 1
                 """;
 

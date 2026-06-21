@@ -20,19 +20,10 @@ public sealed class DownloadService(
             return [];
         }
 
-        var downloads = new[]
-        {
-            new DownloadRequest(
-                "celestrak-active-tle",
-                DataSourceKind.Tle,
-                options.Value.CelesTrak.ActiveSatellitesTleUrl,
-                options.Value.CelesTrak.RawFileExtension),
-            new DownloadRequest(
-                "celestrak-stations-tle",
-                DataSourceKind.Tle,
-                options.Value.CelesTrak.StationsTleUrl,
-                options.Value.CelesTrak.RawFileExtension)
-        };
+        var downloads = options.Value.CelesTrak.Sources
+            .Where(source => source.Enabled)
+            .Select(source => new DownloadRequest(source.Name, source.Kind, source.Url, source.RawFileExtension))
+            .ToArray();
 
         var datasets = new List<RawDataset>(downloads.Length);
         foreach (var download in downloads)
@@ -79,7 +70,7 @@ public sealed class DownloadService(
             new DownloadRequest(
                 "spacedevs-upcoming-launches",
                 DataSourceKind.SpaceDevsLaunches,
-                options.Value.LaunchData.UpcomingLaunchesUrl,
+                options.Value.LaunchData.LaunchesUrl,
                 options.Value.LaunchData.RawFileExtension),
             cancellationToken);
     }

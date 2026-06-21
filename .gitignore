@@ -6,3 +6,4 @@ obj/
 **/*.user
 src/SpaceTrafficETL/data/
 *.log
+src/SpaceTrafficWeb/.data-protection-keys/
