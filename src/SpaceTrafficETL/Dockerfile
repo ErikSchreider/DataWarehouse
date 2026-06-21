@@ -68,6 +68,8 @@ RUN if [ -n "$EXASOL_ODBC_DRIVER_URL" ] || [ -n "$EXASOL_ODBC_DOWNLOAD_PAGE" ]; 
             echo "Downloaded archive did not contain an ODBC .so file."; \
             exit 1; \
         fi; \
+        echo /opt/exasol/odbc > /etc/ld.so.conf.d/exasol-odbc.conf; \
+        ldconfig; \
         printf '[EXASOL]\nDescription=Exasol ODBC Driver\nDriver=%s\nUsageCount=1\n' "$driver_path" > /etc/odbcinst.ini; \
         rm -rf /tmp/exasol-odbc /tmp/exasol-odbc-driver /tmp/exasol-odbc-page.html; \
     fi
