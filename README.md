@@ -71,7 +71,6 @@ UCS_RAW_FILE_EXTENSION=.csv
 SPACEDEVS_LAUNCH_URL=https://ll.thespacedevs.com/2.2.0/launch/
 ETL_DATA_DIR=/opt/space-traffic-etl/data
 WEB_PORT=8085
-WEB_KEYS_DIR=/opt/space-traffic-web/keys
 ```
 
 If Exasol runs as another container in Portainer, put both stacks on a shared Docker network and use the Exasol container or service name as `EXASOL_HOST`. If Exasol runs outside Docker, use the server IP or DNS name and make sure port `8563` is reachable from inside the containers.

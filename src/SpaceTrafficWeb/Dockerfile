@@ -27,6 +27,9 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates unixodbc \
     && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /app/data-protection-keys \
+    && chown -R $APP_UID:0 /app/data-protection-keys
+
 COPY --from=publish --chown=$APP_UID:0 /app/publish ./
 
 USER $APP_UID

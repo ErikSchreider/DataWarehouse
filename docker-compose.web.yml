@@ -18,4 +18,7 @@ services:
       EXASOL_ODBC_DRIVER: ${EXASOL_ODBC_DRIVER:-EXASOL}
       DATA_PROTECTION_KEYS_DIR: /app/data-protection-keys
     volumes:
-      - ${WEB_KEYS_DIR:-/opt/space-traffic-web/keys}:/app/data-protection-keys
+      - web-keys-data:/app/data-protection-keys
+
+volumes:
+  web-keys-data:
