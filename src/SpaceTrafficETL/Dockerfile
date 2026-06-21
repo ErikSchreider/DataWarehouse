@@ -28,7 +28,7 @@ ENV DOTNET_ENVIRONMENT=Production \
     LD_LIBRARY_PATH=/opt/exasol/odbc
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl tar unzip unixodbc \
+    && apt-get install -y --no-install-recommends ca-certificates curl tar unzip unixodbc unixodbc-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN if [ -n "$EXASOL_ODBC_DRIVER_URL" ] || [ -n "$EXASOL_ODBC_DOWNLOAD_PAGE" ]; then \
@@ -63,13 +63,17 @@ RUN if [ -n "$EXASOL_ODBC_DRIVER_URL" ] || [ -n "$EXASOL_ODBC_DOWNLOAD_PAGE" ]; 
             tar -xf /tmp/exasol-odbc-driver -C /tmp/exasol-odbc; \
         fi; \
         find /tmp/exasol-odbc -type f -name '*.so*' -exec cp {} /opt/exasol/odbc/ \;; \
-        driver_path="$(find /opt/exasol/odbc -type f -name '*.so*' | grep -i odbc | head -n 1)"; \
+        driver_path="$(find /opt/exasol/odbc -type f -name '*odbc*.so*' | head -n 1)"; \
         if [ -z "$driver_path" ]; then \
             echo "Downloaded archive did not contain an ODBC .so file."; \
             exit 1; \
         fi; \
         echo /opt/exasol/odbc > /etc/ld.so.conf.d/exasol-odbc.conf; \
         ldconfig; \
+        if ldd "$driver_path" | grep -q 'not found'; then \
+            ldd "$driver_path"; \
+            exit 1; \
+        fi; \
         printf '[EXASOL]\nDescription=Exasol ODBC Driver\nDriver=%s\nUsageCount=1\n' "$driver_path" > /etc/odbcinst.ini; \
         rm -rf /tmp/exasol-odbc /tmp/exasol-odbc-driver /tmp/exasol-odbc-page.html; \
     fi
