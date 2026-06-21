@@ -15,7 +15,6 @@ services:
     build:
       context: ./src/SpaceTrafficETL
       dockerfile: Dockerfile
-    image: space-traffic-etl:latest
     restart: unless-stopped
     depends_on:
       - exasoldb
@@ -39,7 +38,6 @@ services:
     build:
       context: ./src/SpaceTrafficWeb
       dockerfile: Dockerfile
-    image: space-traffic-web:latest
     restart: unless-stopped
     depends_on:
       - exasoldb
