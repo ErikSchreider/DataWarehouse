@@ -57,7 +57,7 @@ In Portainer create a new stack from this repository and use `docker-compose.yml
 Add these environment variables in the Portainer stack editor:
 
 ```text
-EXASOL_DOCKER_TAG=2025.1.11
+EXASOL_DOCKER_TAG=latest
 EXASOL_EXTERNAL_PORT=9563
 EXASOL_HOST=exasoldb
 EXASOL_PORT=8563
@@ -75,7 +75,7 @@ WEB_PORT=8085
 
 If Exasol runs as another container in Portainer, put both stacks on a shared Docker network and use the Exasol container or service name as `EXASOL_HOST`. If Exasol runs outside Docker, use the server IP or DNS name and make sure port `8563` is reachable from inside the containers.
 
-The default stack starts its own Exasol container named `exasoldb` from `exasol/docker-db`. It exposes Exasol on host port `9563` and persists database files in the named Docker volume `exasol-data`. Inside the stack, ETL and web connect to `exasoldb:8563`.
+The default stack starts its own Exasol container named `exasoldb` from `exasol/docker-db`. It exposes Exasol on host port `9563` and persists database files in the named Docker volume `exasol-data`. Inside the stack, ETL and web connect to `exasoldb:8563`. If a pinned Exasol tag does not start on your server, use `EXASOL_DOCKER_TAG=latest`, which matches the image variant that was already tested on this Portainer host.
 
 The ETL uses these data sources by default:
 
