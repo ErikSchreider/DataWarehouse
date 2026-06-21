@@ -20,6 +20,8 @@ public sealed class ExasolOptions
 
     public string Password { get; set; } = string.Empty;
 
+    public string Fingerprint { get; set; } = string.Empty;
+
     [Required]
     public string OdbcDriver { get; set; } = "EXASOL";
 

@@ -27,6 +27,7 @@ services:
       EXASOL_SCHEMA: ${EXASOL_SCHEMA:-SPACE_TRAFFIC}
       EXASOL_USER: ${EXASOL_USER:-sys}
       EXASOL_PASSWORD: ${EXASOL_PASSWORD:-exasol}
+      EXASOL_FINGERPRINT: ${EXASOL_FINGERPRINT:-}
       EXASOL_ODBC_DRIVER: ${EXASOL_ODBC_DRIVER:-EXASOL}
       ETL_INTERVAL_HOURS: ${ETL_INTERVAL_HOURS:-24}
       SpaceTraffic__Ucs__SatelliteDatabaseDownloadUrl: ${UCS_DOWNLOAD_URL:-https://www.ucsusa.org/resources/satellite-database}
@@ -57,6 +58,7 @@ services:
       EXASOL_SCHEMA: ${EXASOL_SCHEMA:-SPACE_TRAFFIC}
       EXASOL_USER: ${EXASOL_USER:-sys}
       EXASOL_PASSWORD: ${EXASOL_PASSWORD:-exasol}
+      EXASOL_FINGERPRINT: ${EXASOL_FINGERPRINT:-}
       EXASOL_ODBC_DRIVER: ${EXASOL_ODBC_DRIVER:-EXASOL}
       DATA_PROTECTION_KEYS_DIR: /app/data-protection-keys
     volumes:

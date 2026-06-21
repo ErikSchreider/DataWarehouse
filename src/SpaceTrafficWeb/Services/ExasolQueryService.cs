@@ -92,9 +92,19 @@ public sealed class ExasolQueryService(IOptions<ExasolOptions> options, ILogger<
         return string.Join(
             ';',
             $"Driver={{{EscapeDriverName(exasol.OdbcDriver)}}}",
-            $"EXAHOST={exasol.Host}:{exasol.Port}",
+            $"EXAHOST={BuildExaHost(exasol)}",
             $"UID={exasol.Username}",
             $"PWD={exasol.Password}");
+    }
+
+    private static string BuildExaHost(ExasolOptions exasol)
+    {
+        var host = exasol.Host.Trim();
+        var fingerprint = exasol.Fingerprint.Trim();
+
+        return string.IsNullOrWhiteSpace(fingerprint)
+            ? $"{host}:{exasol.Port}"
+            : $"{host}/{fingerprint}:{exasol.Port}";
     }
 
     private static string EscapeDriverName(string driverName)

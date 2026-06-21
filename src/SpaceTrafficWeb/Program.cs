@@ -60,6 +60,7 @@ static Dictionary<string, string?> BuildEnvironmentOverrides(IConfiguration conf
     AddIfPresent(overrides, "Exasol:Schema", configuration["EXASOL_SCHEMA"]);
     AddIfPresent(overrides, "Exasol:Username", configuration["EXASOL_USER"]);
     AddIfPresent(overrides, "Exasol:Password", configuration["EXASOL_PASSWORD"]);
+    AddIfPresent(overrides, "Exasol:Fingerprint", configuration["EXASOL_FINGERPRINT"]);
     AddIfPresent(overrides, "Exasol:OdbcDriver", configuration["EXASOL_ODBC_DRIVER"]);
 
     return overrides;
