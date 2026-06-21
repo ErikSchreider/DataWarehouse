@@ -52,10 +52,8 @@ public sealed class UcsParserService(ILogger<UcsParserService> logger) : IUcsPar
                 continue;
             }
 
-            var normalized = record.ToDictionary(
-                item => NormalizeHeader(item.Key),
-                item => item.Value?.ToString(),
-                StringComparer.OrdinalIgnoreCase);
+            var normalized = BuildNormalizedValues(record.Select(item =>
+                new KeyValuePair<string, string?>(item.Key, item.Value?.ToString())));
 
             var name = GetValue(normalized, "current official name of satellite", "name of satellite", "satellite name", "name");
             if (string.IsNullOrWhiteSpace(name))
@@ -124,12 +122,12 @@ public sealed class UcsParserService(ILogger<UcsParserService> logger) : IUcsPar
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var normalized = headers
-                .Where(header => !string.IsNullOrWhiteSpace(header.Value))
-                .ToDictionary(
-                    header => header.Value,
-                    header => row.TryGetValue(header.Key, out var value) ? value : null,
-                    StringComparer.OrdinalIgnoreCase);
+            var normalized = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+            foreach (var header in headers.Where(header => !string.IsNullOrWhiteSpace(header.Value)))
+            {
+                row.TryGetValue(header.Key, out var value);
+                AddNormalizedValue(normalized, header.Value, value);
+            }
 
             var name = GetValue(normalized, "current official name of satellite", "name of satellite", "satellite name", "name");
             if (string.IsNullOrWhiteSpace(name))
@@ -221,6 +219,37 @@ public sealed class UcsParserService(ILogger<UcsParserService> logger) : IUcsPar
     {
         var normalized = value.Replace('_', ' ').Replace('/', ' ').Replace('-', ' ');
         return string.Join(' ', normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries)).Trim().ToLowerInvariant();
+    }
+
+    private static Dictionary<string, string?> BuildNormalizedValues(IEnumerable<KeyValuePair<string, string?>> values)
+    {
+        var normalized = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var value in values)
+        {
+            AddNormalizedValue(normalized, value.Key, value.Value);
+        }
+
+        return normalized;
+    }
+
+    private static void AddNormalizedValue(IDictionary<string, string?> values, string key, string? value)
+    {
+        var normalizedKey = NormalizeHeader(key);
+        if (string.IsNullOrWhiteSpace(normalizedKey))
+        {
+            return;
+        }
+
+        if (!values.TryGetValue(normalizedKey, out var existingValue))
+        {
+            values.Add(normalizedKey, value);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(existingValue) && !string.IsNullOrWhiteSpace(value))
+        {
+            values[normalizedKey] = value;
+        }
     }
 
     private static string? GetValue(IDictionary<string, string?> values, params string[] names)

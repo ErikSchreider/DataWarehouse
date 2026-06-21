@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using System.Net;
 using SpaceTrafficETL.Configuration;
 using SpaceTrafficETL.Models;
 
@@ -121,7 +122,26 @@ public sealed class DownloadService(
             options.Value.Etl.MaxDownloadRetries);
 
         using var response = await httpClient.GetAsync(request.Url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var celesTrakNotUpdatedMessage = await TryReadCelesTrakNotUpdatedMessageAsync(
+                request,
+                response,
+                cancellationToken);
+
+            if (celesTrakNotUpdatedMessage is not null && TryGetLatestRawDataset(request) is { } cachedDataset)
+            {
+                logger.LogWarning(
+                    "CelesTrak source {SourceName} has not updated upstream; reusing latest local raw file {RawFilePath}. Response: {ResponseMessage}",
+                    request.SourceName,
+                    cachedDataset.RawFilePath,
+                    celesTrakNotUpdatedMessage);
+
+                return cachedDataset;
+            }
+
+            response.EnsureSuccessStatusCode();
+        }
 
         await using var output = File.Create(rawFilePath);
         await response.Content.CopyToAsync(output, cancellationToken);
@@ -149,6 +169,58 @@ public sealed class DownloadService(
             options.Value.DataDirectories.StorageRoot,
             options.Value.DataDirectories.Raw,
             downloadedAt.ToString("yyyy-MM-dd"));
+    }
+
+    private async Task<string?> TryReadCelesTrakNotUpdatedMessageAsync(
+        DownloadRequest request,
+        HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        if (request.Kind != DataSourceKind.CelesTrakJson || response.StatusCode != HttpStatusCode.Forbidden)
+        {
+            return null;
+        }
+
+        var message = await response.Content.ReadAsStringAsync(cancellationToken);
+        return message.Contains("GP data has not updated since your last successful", StringComparison.OrdinalIgnoreCase)
+            ? message.Trim()
+            : null;
+    }
+
+    private RawDataset? TryGetLatestRawDataset(DownloadRequest request)
+    {
+        var rawRoot = Path.Combine(options.Value.DataDirectories.StorageRoot, options.Value.DataDirectories.Raw);
+        if (!Directory.Exists(rawRoot))
+        {
+            return null;
+        }
+
+        var safeSourceName = ToSafePathSegment(request.SourceName);
+        var latestFile = Directory.EnumerateFiles(
+                rawRoot,
+                $"*_{safeSourceName}{request.RawFileExtension}",
+                SearchOption.AllDirectories)
+            .Select(path => new FileInfo(path))
+            .Where(file => file.Length > 0)
+            .OrderByDescending(file => file.LastWriteTimeUtc)
+            .FirstOrDefault();
+
+        return latestFile is null
+            ? null
+            : new RawDataset(
+                request.SourceName,
+                request.Kind,
+                request.Url,
+                new DateTimeOffset(latestFile.LastWriteTimeUtc, TimeSpan.Zero),
+                GetContentType(request.RawFileExtension),
+                latestFile.FullName);
+    }
+
+    private static string GetContentType(string rawFileExtension)
+    {
+        return rawFileExtension.Equals(".json", StringComparison.OrdinalIgnoreCase)
+            ? "application/json"
+            : "application/octet-stream";
     }
 
     private static string ToSafePathSegment(string value)
