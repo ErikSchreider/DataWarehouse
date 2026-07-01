@@ -10,7 +10,11 @@ public sealed class DashboardService(IExasolQueryService queryService) : IDashbo
         const string sql = """
             SELECT
                 COUNT(*) AS total_objects,
-                SUM(CASE WHEN UPPER(COALESCE("operational_status", '')) LIKE '%ACTIVE%' THEN 1 ELSE 0 END) AS active_satellites,
+                SUM(CASE
+                    WHEN UPPER(COALESCE("operational_status", '')) LIKE '%ACTIVE%' THEN 1
+                    WHEN UPPER(COALESCE("operational_status", '')) LIKE '%OPERATIONAL%' THEN 1
+                    ELSE 0
+                END) AS active_satellites,
                 SUM(CASE WHEN UPPER(COALESCE("object_type", '')) LIKE '%DEBRIS%' THEN 1 ELSE 0 END) AS debris_objects,
                 (
                     SELECT MAX("imported_at")

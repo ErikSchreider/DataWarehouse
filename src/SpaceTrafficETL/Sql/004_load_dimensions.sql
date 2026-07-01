@@ -28,7 +28,7 @@ SELECT 100, 'UCS Satellite Database', 'SATELLITE_DATABASE', 'https://www.ucsusa.
 UNION ALL
 SELECT 200, 'SpaceDevs Launch Library API', 'LAUNCH_API', 'https://ll.thespacedevs.com/2.2.0/launch/previous/?limit=100'
 UNION ALL
-SELECT 900, 'SpaceTraffic four-week seed', 'DETERMINISTIC_SEED', 'local://space-traffic-etl/recent-four-week-seed';
+SELECT 900, 'Abgeleitete Daten (CelesTrak, 4 Wochen)', 'ABGELEITETE_DATEN', 'https://celestrak.org/NORAD/elements/';
 
 INSERT INTO "dim_operator"
 (
@@ -94,7 +94,10 @@ SELECT
         WHEN MAX(c."source_group") = 'debris' THEN 'DEBRIS'
         ELSE 'SATELLITE'
     END AS "object_type",
-    MAX(u."operational_status") AS "operational_status",
+    COALESCE(
+        MAX(u."operational_status"),
+        CASE WHEN MAX(c."has_active_source") = 1 THEN 'ACTIVE' ELSE NULL END
+    ) AS "operational_status",
     MAX(u."purpose") AS "purpose",
     MAX(u."launch_date") AS "launch_date",
     MAX(o."operator_id") AS "operator_id"
@@ -102,7 +105,8 @@ FROM (
     SELECT
         "norad_id",
         MAX("object_name") AS "object_name",
-        MAX("source_group") AS "source_group"
+        MAX("source_group") AS "source_group",
+        MAX(CASE WHEN "source_group" = 'active' THEN 1 ELSE 0 END) AS "has_active_source"
     FROM "stg_celestrak_objects"
     WHERE "norad_id" IS NOT NULL
     GROUP BY "norad_id"

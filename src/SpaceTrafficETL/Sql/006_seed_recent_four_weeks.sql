@@ -5,8 +5,7 @@ WHERE "source_id" = 900
   AND CAST("observation_timestamp" AS DATE) < ADD_DAYS(CURRENT_DATE, -27);
 
 DELETE FROM "fact_launch_event"
-WHERE "source_id" = 900
-  AND CAST("launch_timestamp" AS DATE) < ADD_DAYS(CURRENT_DATE, -27);
+WHERE "source_id" = 900;
 
 DELETE FROM "fact_object_position_observation"
 WHERE "observation_id" IN (
@@ -50,51 +49,51 @@ SELECT
     900 AS "source_id",
     seed_launches."launch_timestamp",
     seed_launches."launch_name",
-    'SpaceTraffic Seed' AS "provider_name",
+    'Abgeleitete Daten' AS "provider_name",
     seed_launches."rocket_name",
     seed_launches."launch_country",
-    'Seeded historical placeholder' AS "launch_status",
+    'Abgeleitete Daten' AS "launch_status",
     seed_launches."launch_site",
     seed_launches."payload_count",
     seed_launches."success_count"
 FROM (
     SELECT
-        'seed-four-week-launch-' || TO_CHAR(CAST(ADD_DAYS(CURRENT_DATE, -24) AS DATE), 'YYYYMMDD') AS "launch_id",
+        'abgeleitete-daten-launch-' || TO_CHAR(CAST(ADD_DAYS(CURRENT_DATE, -24) AS DATE), 'YYYYMMDD') AS "launch_id",
         CAST(ADD_DAYS(CURRENT_DATE, -24) AS TIMESTAMP) AS "launch_timestamp",
-        'Seed launch observation week 1' AS "launch_name",
+        'Abgeleitete Launch-Aktivitaet Woche 1' AS "launch_name",
         'Representative orbital mission' AS "rocket_name",
         'N/A' AS "launch_country",
-        'Seeded site' AS "launch_site",
+        'Abgeleiteter Startplatz' AS "launch_site",
         1 AS "payload_count",
         1 AS "success_count"
     UNION ALL
     SELECT
-        'seed-four-week-launch-' || TO_CHAR(CAST(ADD_DAYS(CURRENT_DATE, -17) AS DATE), 'YYYYMMDD'),
+        'abgeleitete-daten-launch-' || TO_CHAR(CAST(ADD_DAYS(CURRENT_DATE, -17) AS DATE), 'YYYYMMDD'),
         CAST(ADD_DAYS(CURRENT_DATE, -17) AS TIMESTAMP),
-        'Seed launch observation week 2',
+        'Abgeleitete Launch-Aktivitaet Woche 2',
         'Representative orbital mission',
         'N/A',
-        'Seeded site',
+        'Abgeleiteter Startplatz',
         1,
         1
     UNION ALL
     SELECT
-        'seed-four-week-launch-' || TO_CHAR(CAST(ADD_DAYS(CURRENT_DATE, -10) AS DATE), 'YYYYMMDD'),
+        'abgeleitete-daten-launch-' || TO_CHAR(CAST(ADD_DAYS(CURRENT_DATE, -10) AS DATE), 'YYYYMMDD'),
         CAST(ADD_DAYS(CURRENT_DATE, -10) AS TIMESTAMP),
-        'Seed launch observation week 3',
+        'Abgeleitete Launch-Aktivitaet Woche 3',
         'Representative orbital mission',
         'N/A',
-        'Seeded site',
+        'Abgeleiteter Startplatz',
         1,
         1
     UNION ALL
     SELECT
-        'seed-four-week-launch-' || TO_CHAR(CAST(ADD_DAYS(CURRENT_DATE, -3) AS DATE), 'YYYYMMDD'),
+        'abgeleitete-daten-launch-' || TO_CHAR(CAST(ADD_DAYS(CURRENT_DATE, -3) AS DATE), 'YYYYMMDD'),
         CAST(ADD_DAYS(CURRENT_DATE, -3) AS TIMESTAMP),
-        'Seed launch observation week 4',
+        'Abgeleitete Launch-Aktivitaet Woche 4',
         'Representative orbital mission',
         'N/A',
-        'Seeded site',
+        'Abgeleiteter Startplatz',
         1,
         1
 ) seed_launches
