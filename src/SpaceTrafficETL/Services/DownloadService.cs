@@ -70,7 +70,7 @@ public sealed class DownloadService(
 
         return await DownloadAndStoreAsync(
             new DownloadRequest(
-                "spacedevs-upcoming-launches",
+                "spacedevs-recent-launches",
                 DataSourceKind.SpaceDevsLaunches,
                 options.Value.LaunchData.LaunchesUrl,
                 options.Value.LaunchData.RawFileExtension),

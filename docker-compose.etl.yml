@@ -16,7 +16,7 @@ services:
       ETL_INTERVAL_HOURS: ${ETL_INTERVAL_HOURS:-24}
       SpaceTraffic__Ucs__SatelliteDatabaseDownloadUrl: ${UCS_DOWNLOAD_URL:-https://www.ucsusa.org/resources/satellite-database}
       SpaceTraffic__Ucs__RawFileExtension: ${UCS_RAW_FILE_EXTENSION:-.html}
-      SpaceTraffic__LaunchData__LaunchesUrl: ${SPACEDEVS_LAUNCH_URL:-https://ll.thespacedevs.com/2.2.0/launch/}
+      SpaceTraffic__LaunchData__LaunchesUrl: ${SPACEDEVS_LAUNCH_URL:-https://ll.thespacedevs.com/2.2.0/launch/previous/?limit=100}
       SpaceTraffic__DataDirectories__StorageRoot: /data
     volumes:
       - ${ETL_DATA_DIR:-/opt/space-traffic-etl/data}:/data

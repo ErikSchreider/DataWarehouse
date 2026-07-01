@@ -178,7 +178,7 @@ public sealed class LaunchDataOptions
     public bool Enabled { get; init; } = true;
 
     [Required]
-    public Uri LaunchesUrl { get; init; } = new("https://ll.thespacedevs.com/2.2.0/launch/");
+    public Uri LaunchesUrl { get; init; } = new("https://ll.thespacedevs.com/2.2.0/launch/previous/?limit=100");
 
     [Required]
     public string RawFileExtension { get; init; } = ".json";

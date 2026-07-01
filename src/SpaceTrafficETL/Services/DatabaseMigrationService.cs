@@ -26,7 +26,8 @@ public sealed class DatabaseMigrationService(
     private static readonly string[] WarehouseLoadScripts =
     [
         "004_load_dimensions.sql",
-        "005_load_facts.sql"
+        "005_load_facts.sql",
+        "006_seed_recent_four_weeks.sql"
     ];
 
     public async Task EnsureDatabaseAsync(CancellationToken cancellationToken)
