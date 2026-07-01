@@ -13,7 +13,6 @@ builder.Services
     .AddOptions<SpaceTrafficOptions>()
     .Bind(builder.Configuration.GetSection(SpaceTrafficOptions.SectionName))
     .ValidateDataAnnotations()
-    .Validate(options => options.Etl.Interval > TimeSpan.Zero, "ETL interval must be greater than zero.")
     .Validate(options => !string.IsNullOrWhiteSpace(options.Exasol.Host), "Exasol host is required.")
     .Validate(options => !string.IsNullOrWhiteSpace(options.Exasol.Schema), "Exasol schema is required.")
     .Validate(options => !string.IsNullOrWhiteSpace(options.Exasol.Username), "Exasol user is required.")
@@ -66,10 +65,8 @@ static Dictionary<string, string?> BuildEnvironmentOverrides(IConfiguration conf
     AddIfPresent(overrides, "SpaceTraffic:Exasol:Password", configuration["EXASOL_PASSWORD"]);
     AddIfPresent(overrides, "SpaceTraffic:Exasol:OdbcDriver", configuration["EXASOL_ODBC_DRIVER"]);
 
-    if (double.TryParse(configuration["ETL_INTERVAL_HOURS"], out var intervalHours) && intervalHours > 0)
-    {
-        overrides["SpaceTraffic:Etl:Interval"] = TimeSpan.FromHours(intervalHours).ToString();
-    }
+    AddIfPresent(overrides, "SpaceTraffic:Etl:RunOnStartup", configuration["ETL_RUN_ON_STARTUP"]);
+    AddIfPresent(overrides, "SpaceTraffic:Etl:DailyRunTimeUtc", configuration["ETL_DAILY_RUN_TIME_UTC"]);
 
     return overrides;
 }

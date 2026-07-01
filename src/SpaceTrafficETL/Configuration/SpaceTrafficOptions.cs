@@ -76,11 +76,9 @@ public sealed class DataDirectoryOptions
 
 public sealed class EtlOptions
 {
-    public bool RunOnStartup { get; set; } = true;
+    public bool RunOnStartup { get; set; }
 
-    public TimeSpan Interval { get; set; } = TimeSpan.FromHours(24);
-
-    public TimeSpan DailyRunTimeUtc { get; init; } = new(2, 0, 0);
+    public TimeSpan DailyRunTimeUtc { get; set; } = new(4, 0, 0);
 
     public TimeSpan DownloadTimeout { get; init; } = TimeSpan.FromMinutes(2);
 

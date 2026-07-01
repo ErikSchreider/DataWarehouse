@@ -1,0 +1,89 @@
+@page "/orbit-map"
+@rendermode RenderMode.InteractiveServer
+@inject IOrbitVisualizationService OrbitVisualizationService
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<PageTitle>Orbit Map</PageTitle>
+
+<section class="orbit-map-page">
+    <div class="orbit-map-toolbar">
+        <div>
+            <h1>Orbit Map</h1>
+            <span>@GetStatusText()</span>
+        </div>
+        <div class="orbit-map-legend">
+            <span><i class="legend-dot leo"></i>LEO</span>
+            <span><i class="legend-dot meo"></i>MEO</span>
+            <span><i class="legend-dot geo"></i>GEO</span>
+            <span><i class="legend-dot heo"></i>HEO</span>
+            <span><i class="legend-dot debris"></i>Debris</span>
+        </div>
+    </div>
+
+    @if (errorMessage is not null)
+    {
+        <div class="orbit-map-message">@errorMessage</div>
+    }
+    else if (objects is null)
+    {
+        <div class="orbit-map-message">Loading orbit objects...</div>
+    }
+
+    <div class="orbit-map-stage" @ref="stageElement">
+        <div class="orbit-tooltip" data-orbit-tooltip></div>
+    </div>
+</section>
+
+@code {
+    private ElementReference stageElement;
+    private IJSObjectReference? orbitModule;
+    private IJSObjectReference? orbitScene;
+    private IReadOnlyList<OrbitObjectPoint>? objects;
+    private string? errorMessage;
+    private bool sceneInitialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            objects = await OrbitVisualizationService.GetOrbitObjectsAsync(CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            errorMessage = exception.Message;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (sceneInitialized || objects is null || errorMessage is not null)
+        {
+            return;
+        }
+
+        orbitModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/dist/orbitMap.js");
+        orbitScene = await orbitModule.InvokeAsync<IJSObjectReference>("initOrbitMap", stageElement, objects);
+        sceneInitialized = true;
+    }
+
+    private string GetStatusText()
+    {
+        return objects is null
+            ? "Preparing 3D view"
+            : $"{objects.Count:N0} objects from the warehouse";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (orbitScene is not null)
+        {
+            await orbitScene.InvokeVoidAsync("dispose");
+        }
+
+        if (orbitModule is not null)
+        {
+            await orbitModule.DisposeAsync();
+        }
+    }
+}

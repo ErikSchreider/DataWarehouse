@@ -4,8 +4,19 @@ WORKDIR /src
 COPY SpaceTrafficWeb.csproj ./
 RUN dotnet restore SpaceTrafficWeb.csproj
 
+FROM node:24-bookworm-slim AS assets
+WORKDIR /src
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml vite.config.mjs ./
+COPY ClientApp ./ClientApp
+RUN corepack enable \
+    && corepack prepare pnpm@11.7.0 --activate \
+    && pnpm install --frozen-lockfile \
+    && pnpm build
+
 FROM restore AS publish
 COPY . ./
+COPY --from=assets /src/wwwroot/dist ./wwwroot/dist
 RUN dotnet publish SpaceTrafficWeb.csproj \
     --configuration Release \
     --no-restore \

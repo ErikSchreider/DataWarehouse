@@ -12,20 +12,21 @@ public sealed class SpaceTrafficWorker(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("SpaceTraffic ETL worker started; interval is {Interval}", options.Value.Etl.Interval);
+        logger.LogInformation(
+            "SpaceTraffic ETL worker started; daily run time is {DailyRunTimeUtc} UTC; run on startup is {RunOnStartup}",
+            options.Value.Etl.DailyRunTimeUtc,
+            options.Value.Etl.RunOnStartup);
 
-        if (!options.Value.Etl.RunOnStartup)
+        if (options.Value.Etl.RunOnStartup)
         {
-            var firstRun = GetNextRun(DateTimeOffset.UtcNow, options.Value.Etl.DailyRunTimeUtc);
-            logger.LogInformation("First SpaceTraffic ETL run scheduled for {FirstRunUtc}", firstRun);
-            await Task.Delay(firstRun - DateTimeOffset.UtcNow, stoppingToken);
+            await RunSafelyAsync(stoppingToken);
         }
 
-        await RunSafelyAsync(stoppingToken);
-
-        using var timer = new PeriodicTimer(options.Value.Etl.Interval);
-        while (await timer.WaitForNextTickAsync(stoppingToken))
+        while (!stoppingToken.IsCancellationRequested)
         {
+            var nextRun = GetNextRun(DateTimeOffset.UtcNow, options.Value.Etl.DailyRunTimeUtc);
+            logger.LogInformation("Next SpaceTraffic ETL run scheduled for {NextRunUtc}", nextRun);
+            await Task.Delay(nextRun - DateTimeOffset.UtcNow, stoppingToken);
             await RunSafelyAsync(stoppingToken);
         }
     }

@@ -29,7 +29,8 @@ services:
       EXASOL_PASSWORD: ${EXASOL_PASSWORD:-exasol}
       EXASOL_FINGERPRINT: ${EXASOL_FINGERPRINT:-}
       EXASOL_ODBC_DRIVER: ${EXASOL_ODBC_DRIVER:-EXASOL}
-      ETL_INTERVAL_HOURS: ${ETL_INTERVAL_HOURS:-24}
+      ETL_DAILY_RUN_TIME_UTC: ${ETL_DAILY_RUN_TIME_UTC:-04:00:00}
+      ETL_RUN_ON_STARTUP: ${ETL_RUN_ON_STARTUP:-false}
       SpaceTraffic__Ucs__SatelliteDatabaseDownloadUrl: ${UCS_DOWNLOAD_URL:-https://www.ucsusa.org/resources/satellite-database}
       SpaceTraffic__Ucs__RawFileExtension: ${UCS_RAW_FILE_EXTENSION:-.html}
       SpaceTraffic__LaunchData__LaunchesUrl: ${SPACEDEVS_LAUNCH_URL:-https://ll.thespacedevs.com/2.2.0/launch/previous/?limit=100}

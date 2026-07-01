@@ -33,6 +33,7 @@ builder.Services
 builder.Services.AddScoped<IExasolQueryService, ExasolQueryService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<IOrbitVisualizationService, OrbitVisualizationService>();
 
 var app = builder.Build();
 
