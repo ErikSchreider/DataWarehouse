@@ -76,15 +76,53 @@ public sealed class DashboardService(IExasolQueryService queryService) : IDashbo
                 s."source_name",
                 s."source_type",
                 s."source_url",
-                MAX(f."observation_timestamp") AS last_import_timestamp
+                CASE s."source_id"
+                    WHEN 1 THEN (
+                        SELECT MAX("imported_at")
+                        FROM ${SCHEMA}."stg_celestrak_objects"
+                        WHERE "source_group" = 'active'
+                    )
+                    WHEN 2 THEN (
+                        SELECT MAX("imported_at")
+                        FROM ${SCHEMA}."stg_celestrak_objects"
+                        WHERE "source_group" = 'debris'
+                    )
+                    WHEN 3 THEN (
+                        SELECT MAX("imported_at")
+                        FROM ${SCHEMA}."stg_celestrak_objects"
+                        WHERE "source_group" = 'starlink'
+                    )
+                    WHEN 4 THEN (
+                        SELECT MAX("imported_at")
+                        FROM ${SCHEMA}."stg_celestrak_objects"
+                        WHERE "source_group" = 'geo'
+                    )
+                    WHEN 5 THEN (
+                        SELECT MAX("imported_at")
+                        FROM ${SCHEMA}."stg_celestrak_objects"
+                        WHERE "source_group" = 'stations'
+                    )
+                    WHEN 6 THEN (
+                        SELECT MAX("imported_at")
+                        FROM ${SCHEMA}."stg_celestrak_objects"
+                        WHERE "source_group" = 'last-30-days'
+                    )
+                    WHEN 100 THEN (
+                        SELECT MAX("imported_at")
+                        FROM ${SCHEMA}."stg_ucs_satellites"
+                    )
+                    WHEN 200 THEN (
+                        SELECT MAX("imported_at")
+                        FROM ${SCHEMA}."stg_launch_events"
+                    )
+                    WHEN 900 THEN (
+                        SELECT MAX("observation_timestamp")
+                        FROM ${SCHEMA}."fact_object_position_observation"
+                        WHERE "source_id" = 900
+                    )
+                    ELSE NULL
+                END AS last_import_timestamp
             FROM ${SCHEMA}."dim_source" s
-            LEFT JOIN ${SCHEMA}."fact_object_position_observation" f
-                ON s."source_id" = f."source_id"
-            GROUP BY
-                s."source_id",
-                s."source_name",
-                s."source_type",
-                s."source_url"
             ORDER BY s."source_id"
             """;
 
