@@ -82,14 +82,21 @@ public sealed class CelesTrakJsonParserService(ILogger<CelesTrakJsonParserServic
             var keyValue = part.Split('=', 2);
             if (keyValue.Length == 2 && keyValue[0].Equals("GROUP", StringComparison.OrdinalIgnoreCase))
             {
-                return Uri.UnescapeDataString(keyValue[1]).Trim().ToLowerInvariant();
+                return NormalizeSourceGroup(Uri.UnescapeDataString(keyValue[1]));
             }
         }
 
-        return dataset.SourceName.Replace("celestrak-", string.Empty, StringComparison.OrdinalIgnoreCase)
+        return NormalizeSourceGroup(dataset.SourceName.Replace("celestrak-", string.Empty, StringComparison.OrdinalIgnoreCase)
             .Replace("-json", string.Empty, StringComparison.OrdinalIgnoreCase)
-            .Trim()
-            .ToLowerInvariant();
+            .Trim());
+    }
+
+    private static string NormalizeSourceGroup(string sourceGroup)
+    {
+        var normalized = sourceGroup.Trim().ToLowerInvariant();
+        return normalized.Contains("debris", StringComparison.OrdinalIgnoreCase)
+            ? "debris"
+            : normalized;
     }
 
     private static async Task<string> ReadPreviewAsync(string path, CancellationToken cancellationToken)

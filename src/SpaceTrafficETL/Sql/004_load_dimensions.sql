@@ -4,7 +4,7 @@ MERGE INTO "dim_source" target
 USING (
     SELECT 1 AS "source_id", 'CelesTrak active' AS "source_name", 'CELESTRAK_GP_JSON' AS "source_type", 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=json' AS "source_url"
     UNION ALL
-    SELECT 2 AS "source_id", 'CelesTrak debris' AS "source_name", 'CELESTRAK_GP_JSON' AS "source_type", 'https://celestrak.org/NORAD/elements/gp.php?GROUP=debris&FORMAT=json' AS "source_url"
+    SELECT 2 AS "source_id", 'CelesTrak debris' AS "source_name", 'CELESTRAK_GP_JSON' AS "source_type", 'https://celestrak.org/NORAD/elements/index.php?FORMAT=json' AS "source_url"
     UNION ALL
     SELECT 3 AS "source_id", 'CelesTrak starlink' AS "source_name", 'CELESTRAK_GP_JSON' AS "source_type", 'https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=json' AS "source_url"
     UNION ALL

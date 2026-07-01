@@ -23,6 +23,7 @@ public sealed class DownloadService(
 
         var downloads = options.Value.CelesTrak.Sources
             .Where(source => source.Enabled)
+            .DistinctBy(source => (source.Name, source.Url))
             .Select(source => new DownloadRequest(source.Name, source.Kind, source.Url, source.RawFileExtension))
             .ToArray();
 

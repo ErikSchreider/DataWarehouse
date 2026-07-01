@@ -14,6 +14,9 @@ public sealed class ExasolImportService(
     ILogger<ExasolImportService> logger)
     : IExasolImportService
 {
+    private const int InsertBatchSize = 250;
+    private const int ProgressLogInterval = 5000;
+
     public async Task<IReadOnlyList<ExasolImportResult>> ReloadStagingTablesAsync(
         string? celesTrakCsvPath,
         string? ucsCsvPath,
@@ -120,31 +123,70 @@ public sealed class ExasolImportService(
             return 0;
         }
 
-        await using var command = connection.CreateCommand();
-        command.Transaction = transaction;
-        command.CommandText = BuildInsertStatement(tableName, headers);
-
-        foreach (var _ in headers)
-        {
-            command.Parameters.Add(command.CreateParameter());
-        }
-
+        var batch = new List<string?[]>(InsertBatchSize);
         var rowCount = 0L;
         while (await csv.ReadAsync())
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            var row = new string?[headers.Length];
             for (var index = 0; index < headers.Length; index++)
             {
-                var value = csv.GetField(index);
-                command.Parameters[index].Value = string.IsNullOrWhiteSpace(value) ? DBNull.Value : value;
+                row[index] = csv.GetField(index);
             }
 
-            await command.ExecuteNonQueryAsync(cancellationToken);
-            rowCount++;
+            batch.Add(row);
+            if (batch.Count < InsertBatchSize)
+            {
+                continue;
+            }
+
+            rowCount += await InsertBatchAsync(connection, transaction, tableName, headers, batch, cancellationToken);
+            batch.Clear();
+            LogImportProgress(tableName, rowCount);
+        }
+
+        if (batch.Count > 0)
+        {
+            rowCount += await InsertBatchAsync(connection, transaction, tableName, headers, batch, cancellationToken);
+            LogImportProgress(tableName, rowCount);
         }
 
         return rowCount;
+    }
+
+    private async Task<int> InsertBatchAsync(
+        DbConnection connection,
+        DbTransaction transaction,
+        string tableName,
+        IReadOnlyList<string> headers,
+        IReadOnlyList<string?[]> rows,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = BuildInsertStatement(tableName, headers, rows.Count);
+
+        foreach (var row in rows)
+        {
+            foreach (var value in row)
+            {
+                var parameter = command.CreateParameter();
+                parameter.Value = string.IsNullOrWhiteSpace(value) ? DBNull.Value : value;
+                command.Parameters.Add(parameter);
+            }
+        }
+
+        await command.ExecuteNonQueryAsync(cancellationToken);
+        return rows.Count;
+    }
+
+    private void LogImportProgress(string tableName, long rowCount)
+    {
+        if (rowCount % ProgressLogInterval == 0)
+        {
+            logger.LogInformation("Inserted {RowCount} rows into {TableName}", rowCount, tableName);
+        }
     }
 
     private async Task<long> CountDataRowsAsync(string csvPath, CancellationToken cancellationToken)
@@ -194,11 +236,12 @@ public sealed class ExasolImportService(
         };
     }
 
-    private string BuildInsertStatement(string tableName, IReadOnlyList<string> columns)
+    private string BuildInsertStatement(string tableName, IReadOnlyList<string> columns, int rowCount)
     {
         var columnList = string.Join(", ", columns.Select(QuoteIdentifier));
-        var parameterList = string.Join(", ", columns.Select(_ => "?"));
-        return $"INSERT INTO {QualifiedTable(tableName)} ({columnList}) VALUES ({parameterList})";
+        var rowParameterList = $"({string.Join(", ", columns.Select(_ => "?"))})";
+        var parameterList = string.Join(", ", Enumerable.Repeat(rowParameterList, rowCount));
+        return $"INSERT INTO {QualifiedTable(tableName)} ({columnList}) VALUES {parameterList}";
     }
 
     private string QualifiedTable(string tableName)
